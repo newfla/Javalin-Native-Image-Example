@@ -1,5 +1,6 @@
 # Javalin-Native-Image-Example
 Create a minimal native application around a Maven project using GraalVM Maven plugin project and ship it as ***super lightweight*** Docker image 
+
  ![Docker Images Snapshot](https://github.com/newfla/Javalin-Native-Image-Example/blob/main/res/docker_images_comparison.png?raw=true) 
 
 ## Repository content
