@@ -1,0 +1,30 @@
+FROM ubuntu:jammy AS server_builder
+ARG maven_version="3.8.6"
+ARG graalvm_version="22.2.0"
+ARG jre_example="https://github.com/newfla/Create-JRE-using-Docker.git"
+WORKDIR /etc
+
+ENV PATH=/etc/maven/bin:$PATH
+ENV PATH=/etc/graalvm-ce/bin:$PATH
+ENV JAVA_HOME=/etc/graalvm-ce
+ENV GRAALVM_HOME=/etc/graalvm-ce
+
+ADD https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-${graalvm_version}/graalvm-ce-java17-linux-amd64-${graalvm_version}.tar.gz .
+ADD https://dlcdn.apache.org/maven/maven-3/${maven_version}/binaries/apache-maven-${maven_version}-bin.tar.gz .
+
+RUN apt update && apt install -y build-essential zlib1g-dev git && \
+    tar -xzf graalvm-ce-java17-linux-amd64-${graalvm_version}.tar.gz && ln -s graalvm-ce-java17-${graalvm_version} graalvm-ce && rm graalvm-ce-java17-linux-amd64-${graalvm_version}.tar.gz && \
+    tar -xzf apache-maven-${maven_version}-bin.tar.gz && ln -s apache-maven-${maven_version} maven && rm apache-maven-${maven_version}-bin.tar.gz && \
+    $GRAALVM_HOME/bin/gu install native-image
+
+WORKDIR /server
+
+COPY /server .
+RUN git clone ${jre_example} && mv Create-JRE-using-Docker/server/src . && mvn clean package -Pnative
+
+
+FROM ubuntu:jammy AS server_native_image
+WORKDIR /server_app
+COPY --from=server_builder /server/target/server ./server
+EXPOSE 7070
+ENTRYPOINT [ "/server_app/server" ]
